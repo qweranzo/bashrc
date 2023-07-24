@@ -458,6 +458,10 @@ folder_gen () {
 	for f in *.*; do new_dir_name=$(echo $f | sed 's/^[^_]*_//' | sed 's/_.*//g'); mkdir $new_dir_name; done;
 }
 
+to_getintent () {
+	find . -type f -iname *.html -exec sed -i 's/<div id="bs"><\/div>/\n\t<div id="Stage">\n\t\t<div id="bs"><\/div>\n\t<\/div>\n\t/g' {} \;
+}
+
 # WSL only; Find files using Linux bash 'find' and open by windows CMD 'start' 
 winstart () {
 
@@ -590,7 +594,8 @@ fi
 
 
 #VcXsrv
-export DISPLAY="`grep nameserver /etc/resolv.conf | sed 's/nameserver //'`:0"
+export DISPLAY=:0.0
+export LIBGL_ALWAYS_INDIRECT=1
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
