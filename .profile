@@ -42,14 +42,18 @@ alias ffcountframesmkv="ffprobe -v error -count_frames -select_streams v:0 -show
 alias editbrc="nano ~/.profile"
 
 
-
-
-check () {
-	echo 'ITS OOOOOOOOOOOOOKKKK!!!!!!!!!!!!';
-}
-
-check2 () {
-	echo 'this is check 2 functtion';
+testfunc () {
+	echo "Начальное значение OPTIND равно $OPTIND"
+while getopts ":pq:" option ; do
+    case "$option" in
+      "p") echo "Найдена опция $option";;
+      "q") echo "Опция $option имеет значение $OPTARG";;
+      "?") echo "Неизвестная опция $OPTARG";;
+      ":") echo "Не передано значение для опции $OPTARG";;
+       * ) echo "Произошла неизвестная ошибка";;
+    esac
+    echo "OPTIND имеет значение $OPTIND"
+done
 }
 
 
@@ -216,7 +220,7 @@ zipall () {
 			return 0;
 	fi;
 
-	local recursive='';
+	local recursive='-r';
 
 	if [[ ! -z "$1" ]]
 		then 
@@ -264,6 +268,33 @@ extractchannel () {
 
 	echo "channel: $channel";
 	
+}
+
+
+extractframe () {
+
+	local filename="$1";
+	local framenum="$2";
+	
+	if [[ $PWD == ~ ]] || [[ $PWD == "/" ]]
+		then 
+			echo "Wrong directory. No access to HOME or ROOT dir";
+			return 0;
+	fi;
+
+	if [[ -z $filename ]] 
+	then
+		echo 'no args. Usage example: extractframe "*.mp4" 100'
+		return 0;
+	fi;
+	if [[ -z $framenum ]] 
+	then 
+		echo 'no 2nd arg - frame number. Usage example: extractframe "*.mp4" 100'
+		return 0;
+	fi;
+
+	find . -maxdepth 2 -type f -iname "$filename" -exec bash -c 'ffmpeg -i $1 -vf "select=eq(n\,'$framenum')" -vframes 1 ${1::-4}-frame-'$framenum'.jpg' sh {} \;
+
 }
 
 
@@ -415,7 +446,7 @@ imgsToGifs () {
 	echo -e "\n\t--info--\n\tLOSSY:  $lossy\n\tCOLORS: $colors\n\tDELAY:  ${delay}/100 sec \n\tLOOP: $loopcount \n\tSCALE:  $scale\n"
 		
 	active_dir=$PWD;
-	for subdir in */; do cd "$subdir"; convert -delay "${delay}" -loop 0 "*.$img_extension" ~tmpgif.gif; gifsicle ~tmpgif.gif --scale "$scale" --colors "$colors" --lossy="$lossy" --loopcount=$loopcount > "${subdir::-1}.gif"; rm ~tmpgif.gif; mv "${subdir::-1}.gif" "$active_dir/${subdir:0:-1}.gif"; cd "$active_dir"; done;
+	for subdir in */; do cd "$subdir"; convert -delay "${delay}" -loop 0 "*.$img_extension" ~tmpgif.gif; gifsicle -O3 ~tmpgif.gif --scale "$scale" --color-method median-cut --colors "$colors" --lossy="$lossy" --loopcount=$loopcount > "${subdir::-1}.gif"; rm ~tmpgif.gif; mv "${subdir::-1}.gif" "$active_dir/${subdir:0:-1}.gif"; cd "$active_dir"; done;
 
 }
 
@@ -490,6 +521,20 @@ winstart () {
 	fi;
 
 }
+
+mvprefix () {
+	for d in */; do mv *${d::-1}*.* $d; done;
+}
+
+
+adbbackup () {
+	local android_dir="/storage/emulated/0";
+	local pc_dir="/mnt/e/phones_backup";
+	echo "backup from ${android_dir} to ${pc_dir}";
+	find $android_dir -not -iname 
+}
+
+
 
 
 # check the window size after each command and, if necessary,
@@ -594,8 +639,13 @@ fi
 
 
 #VcXsrv
-export DISPLAY=:0.0
-export LIBGL_ALWAYS_INDIRECT=1
+# export DISPLAY=:0.0
+# export DISPLAY=:0
+# export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0
+# export LIBGL_ALWAYS_INDIRECT=1
+export XDG_RUNTIME_DIR=/run/user/$UID
+export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0
+sudo /etc/init.d/dbus start &> /dev/null
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -605,5 +655,4 @@ export NVM_DIR="$HOME/.nvm"
 # image tools 
 export -f jpgif pngif imgsToGifs clearexif jpgmin pngmin svgmin;
 
-# test
-export -f check2;
+
